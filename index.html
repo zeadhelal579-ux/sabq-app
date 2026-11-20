@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sabq - Industrial RO Monitor</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2563EB">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sabq">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F4F7FB;color:#14233B;font-size:13px;line-height:1.4;min-height:100vh}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid #2563EB;outline-offset:2px}
+.ok{--c:#047857;--bg:#F0FBF6;--bd:#A7E3C9;--chip:#D1F2E3;--acc:#1F9D6B}
+.warn{--c:#B45309;--bg:#FFF8EE;--bd:#FCD9A6;--chip:#FDE8C8;--acc:#F28C1E}
+.crit{--c:#B91C1C;--bg:#FEF4F4;--bd:#F5B5B5;--chip:#FDE0E0;--acc:#DC2626}
+
+.top{min-height:52px;background:#fff;border-bottom:1px solid #DCE4EE;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 20px;padding:6px 20px}
+.top-l,.top-r{display:flex;align-items:center;flex-wrap:wrap;gap:8px 20px}
+.brand{font-size:18px;font-weight:800;color:#2563EB;display:flex;align-items:center;gap:7px}
+.tabs{display:flex;gap:4px}
+.tab{padding:5px 12px;border-radius:4px;font-size:12px;font-weight:500;color:#5F6F85;background:none;border:1px solid transparent}
+.tab:hover{background:#F4F7FB}
+.tab.active{background:#E8F0FE;color:#2563EB;border-color:#D2E3FC;font-weight:600}
+.top-r{color:#5F6F85;font-size:12px}
+.live{display:flex;align-items:center;gap:6px}
+.live i{width:7px;height:7px;border-radius:50%;background:#1F9D6B}
+.bell{position:relative;width:40px;height:40px;border-radius:10px;border:1px solid #DCE4EE;background:#fff;color:#14233B;display:flex;align-items:center;justify-content:center}
+.bell:hover,.bell[aria-expanded=true]{background:#FFF3E3;border-color:#F8C27E;color:#B45309}
+.bell svg{width:22px;height:22px}
+.badge{position:absolute;top:-6px;right:-6px;background:#F28C1E;color:#fff;font-size:10px;font-weight:700;height:18px;min-width:18px;padding:0 4px;border-radius:9px;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
+.badge.red{background:#DC2626}
+.badge[hidden]{display:none}
+
+.main{display:flex;flex-direction:column;gap:12px;padding:14px 20px;max-width:1400px;margin:0 auto}
+.card{background:#fff;border:1px solid #DCE4EE;border-radius:8px;padding:16px 20px}
+.card h2{font-size:14px;font-weight:700}
+.card-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.card-h .r{display:flex;align-items:center;gap:10px}
+.status{font-size:11px;font-weight:600;color:var(--c);background:var(--chip);padding:2px 8px;border-radius:12px;border:1px solid var(--bd)}
+
+.tiles{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:14px}
+.tile{min-height:210px;background:var(--bg);border:1px solid var(--bd);border-top:4px solid var(--acc);border-radius:6px;padding:20px 18px;display:flex;flex-direction:column;justify-content:space-between;gap:8px}
+.tile.big{border-top:1px solid var(--bd);border-left:6px solid var(--acc);padding:22px 24px}
+.tile-h{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.tile-h span:first-child{font-size:12px;font-weight:600;color:#5F6F85}
+.big .tile-h span:first-child{font-size:16px;font-weight:700;color:var(--c);text-transform:uppercase;letter-spacing:.6px}
+.pill{font-size:10px;font-weight:700;color:var(--c);background:var(--chip);padding:2px 6px;border-radius:3px;white-space:nowrap}
+.big .pill{font-size:13px;padding:5px 12px;border-radius:6px}
+.val{font-size:46px;font-weight:800;color:var(--c);line-height:1;letter-spacing:-1px}
+.val small{font-size:16px;font-weight:600;letter-spacing:0;margin-left:4px}
+.big .val{font-size:clamp(72px,7.5vw,108px);letter-spacing:-2px}
+.big .val small{font-size:clamp(28px,2.8vw,40px);font-weight:700}
+.note{font-size:11px;font-weight:500;color:var(--c);line-height:1.5}
+.big .note{font-size:15px}
+
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:11px;color:#5F6F85;font-weight:500}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend b{display:inline-block;width:16px;height:0;border-top:3px solid}
+#chart svg,#chCl svg,#chDp svg{display:block;width:100%;height:auto}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;padding:7px 12px;color:#5F6F85;font-weight:600;font-size:12px;border-bottom:2px solid #EDF2F7}
+td{padding:7px 12px;border-bottom:1px solid #F1F5F9;color:#5F6F85}
+td:first-child{color:#14233B}
+tr[data-n]{cursor:pointer}
+tr[data-n]:hover{background:#F8FAFC}
+tr.cur td{font-weight:700;color:var(--c)}
+tr.cur td:first-child{color:#14233B}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--acc);margin-right:8px}
+tr.cur em{font-style:normal;font-size:12px;font-weight:600;color:#5F6F85;margin-left:6px}
+
+/* alerts drawer: hidden until the bell is pressed */
+.drawer{position:fixed;top:0;right:0;height:100%;width:360px;max-width:100vw;background:#fff;border-left:1px solid #DCE4EE;box-shadow:-8px 0 24px rgba(20,35,59,.12);padding:18px;display:flex;flex-direction:column;transform:translateX(105%);transition:transform .25s ease;z-index:20;visibility:hidden}
+.drawer.open{transform:none;visibility:visible}
+.side-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #EDF2F7}
+.side-h h2{font-size:15px;display:flex;align-items:center;gap:8px}
+.count{background:#FDE8C8;color:#B45309;font-size:11px;font-weight:700;padding:1px 7px;border-radius:10px}
+.side-r{display:flex;align-items:center;gap:12px}
+.link{background:none;border:0;font-size:12px;color:#5F6F85}
+.link:hover{color:#2563EB}
+.x{font-size:20px;line-height:1;color:#5F6F85;background:none;border:0}
+#alerts{overflow-y:auto;flex:1}
+.alert{border:1px solid #E2E8F0;border-left:4px solid var(--acc);border-radius:0 6px 6px 0;padding:12px;margin-bottom:10px;display:flex;flex-direction:column;gap:6px}
+.alert.done{opacity:.55}
+.alert-t{display:flex;justify-content:space-between;font-size:11px;color:#6B7A90}
+.alert-t b{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--c)}
+.alert p{font-size:12px;line-height:1.45}
+.ack{align-self:flex-end;font-size:11px;font-weight:600;color:#2563EB;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:4px;padding:4px 10px}
+.ack:hover{background:#DBEAFE}
+.ack-done{align-self:flex-end;font-size:11px;font-weight:600;color:#047857}
+.empty{color:#6B7A90;font-size:12px;padding:24px 0;text-align:center}
+.scrim{position:fixed;inset:0;background:rgba(20,35,59,.25);z-index:10}
+.scrim[hidden]{display:none}
+
+.btn{height:32px;font-size:12px;font-weight:600;border:0;border-radius:4px;padding:0 14px}
+.btn.primary{background:#2563EB;color:#fff;display:flex;align-items:center;gap:6px}
+.btn.primary:hover{background:#1D4ED8}
+.btn.ghost{background:#F1F5F9;color:#14233B}
+dialog{margin:auto;border:1px solid #DCE4EE;border-radius:8px;padding:20px;width:min(380px,92vw);color:#14233B}
+dialog::backdrop{background:rgba(20,35,59,.4)}
+dialog h3{font-size:15px;margin-bottom:8px}
+dialog p{color:#5F6F85;font-size:13px;margin-bottom:16px}
+.row{display:flex;justify-content:flex-end;gap:8px}
+
+.live-g{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.toast{position:fixed;left:50%;top:12px;transform:translate(-50%,-160%);transition:transform .3s;z-index:30;width:min(440px,94vw);background:#DC2626;color:#fff;border-radius:8px;padding:12px 16px;font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.toast.show{transform:translate(-50%,0)}
+.btn.warnb{background:#FFF3E3;color:#B45309;border:1px solid #F8C27E}
+.tabs{overflow-x:auto}
+@media(max-width:700px){.live-g{grid-template-columns:1fr}}
+@media(max-width:1100px){.tiles{grid-template-columns:1fr 1fr}.tile.big{grid-column:1/-1}}
+@media(max-width:520px){.tiles{grid-template-columns:1fr}.main{padding:10px}.top{padding:6px 10px}.card{padding:12px}.val{font-size:38px}.btn{height:36px}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-l">
+    <div class="brand">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+      Sabq
+    </div>
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-n="1">Membrane 1</button>
+      <button class="tab" data-n="2">Membrane 2</button>
+      <button class="tab" data-n="3">Membrane 3</button>
+      <button class="tab" data-n="4">Membrane 4</button>
+    </nav>
+  </div>
+  <div class="top-r">
+    <button class="btn ghost" id="notif">🔔 Enable alerts</button><div class="live"><i></i><span>Live · updated <span id="ago">0</span>s ago · Demo (simulated sensor)</span></div>
+    <div id="clock"></div>
+    <button class="bell" id="bell" aria-label="Alerts" aria-expanded="false" title="Alerts">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span class="badge" id="bellN" hidden>0</span>
+    </button>
+  </div>
+</header>
+
+<main class="main">
+  <section class="card" id="readings"></section>
+  <section class="live-g">
+    <div class="card"><div class="card-h" style="margin-bottom:6px"><h2>Free chlorine – live, last 60 s (ppm)</h2><span class="legend"><span style="color:#B91C1C">limit 0.10</span></span></div><div id="chCl"></div></div>
+    <div class="card"><div class="card-h" style="margin-bottom:6px"><h2>Pressure drop ΔP – live, last 60 s (bar)</h2><span class="legend"><span style="color:#B91C1C">limit 0.50</span></span></div><div id="chDp"></div></div>
+  </section>
+  <section class="card">
+    <div class="card-h" style="margin-bottom:6px">
+      <h2 id="chartT">Pressure Drop (ΔP) – Last 12 Months</h2>
+      <div class="legend">
+        <span><b style="border-color:#1F9D6B"></b>Monthly ΔP</span>
+        <span style="color:#B91C1C"><b style="border-top-style:dashed;border-color:#DC2626"></b>Alert limit (0.5 bar)</span>
+      </div>
+    </div>
+    <div id="chart"></div>
+  </section>
+  <section class="card" style="padding-bottom:14px">
+    <h2 style="margin-bottom:6px">All Membranes</h2>
+    <table>
+      <thead><tr><th style="width:34%">Membrane</th><th>ΔP</th><th>Free chlorine</th><th>Cleaning in</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </section>
+</main>
+
+<div class="scrim" id="scrim" hidden></div>
+<div class="toast" id="toast" role="alert"></div>
+<aside class="drawer" id="drawer" aria-label="Alerts">
+  <div class="side-h">
+    <h2>Active Alerts <span class="count" id="cnt">0</span></h2>
+    <div class="side-r"><button class="link" id="clear">Clear read</button><button class="x" id="close" aria-label="Close">×</button></div>
+  </div>
+  <div id="alerts"></div>
+</aside>
+
+<dialog id="dlg">
+  <form method="dialog">
+    <h3>Log CIP event</h3>
+    <p id="dlgText"></p>
+    <div class="row">
+      <button class="btn ghost" value="cancel">Cancel</button>
+      <button class="btn primary" value="ok">Log CIP</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+/* ---------- DATA (replace with real sensor data, e.g. fetch('/api/membranes')) ----------
+   d    = days since last CIP        npf = normalized permeate flow %
+   inP  = feed pressure at membrane inlet (bar)
+   dp   = last 12 monthly ΔP readings (bar), oldest → newest
+   cl   = free chlorine at RO feed (ppm)  */
+const LIM = 0.5, WARN = 0.42, CL_WARN = 0.05, CL_LIM = 0.10, NPF_LIM = 90;
+const membranes = [
+  { n:1, d:38, npf:99, inP:5.0, cl:0.01, dp:[.30,.30,.31,.30,.31,.31,.31,.32,.31,.31,.30,.30] },
+  { n:2, d:95, npf:94, inP:5.1, cl:0.02, dp:[.30,.31,.30,.31,.31,.32,.32,.34,.37,.40,.43,.46] },
+  { n:3, d:21, npf:99, inP:5.0, cl:0.01, dp:[.31,.30,.31,.31,.30,.31,.31,.31,.32,.31,.31,.31] },
+  { n:4, d:70, npf:97, inP:5.0, cl:0.03, dp:[.31,.31,.32,.31,.32,.32,.33,.32,.33,.33,.34,.34] },
+];
+let alerts = [
+  { id:1, n:2, lvl:'warn', time:'08:15',     msg:'ΔP rising: 0.46 bar (limit 0.5 bar). Prepare chemicals for cleaning.', ack:false },
+  { id:2, n:2, lvl:'warn', time:'Yesterday', msg:'Normalized flow dropped to 94% (alert limit 90%).', ack:false },
+];
+
+/* ---------- MODEL ---------- */
+let cur = 1;
+const get = n => membranes.find(m => m.n === n);
+const dpNow = m => m.dp[11];
+const slope = m => (m.dp[11] - m.dp[8]) / 90;                       // bar per day, last 3 months
+const daysLeft = m => {
+  const s = slope(m), byDp = s > 0.0005 ? (LIM - dpNow(m)) / s : Infinity;
+  return Math.max(0, Math.round(Math.min(byDp, 120 - m.d)));        // 120-day CIP interval
+};
+const dpLvl = v => v > LIM ? 'crit' : v >= WARN ? 'warn' : 'ok';
+const levels = m => ({
+  npf: m.npf < NPF_LIM ? 'crit' : m.npf < 95 ? 'warn' : 'ok',
+  dp:  dpLvl(dpNow(m)),
+  cl:  m.cl >= CL_LIM ? 'crit' : m.cl >= CL_WARN ? 'warn' : 'ok',
+  cip: daysLeft(m) <= 7 ? 'crit' : daysLeft(m) <= 30 ? 'warn' : 'ok',
+});
+const worst = m => { const l = Object.values(levels(m)); return l.includes('crit') ? 'crit' : l.includes('warn') ? 'warn' : 'ok'; };
+const LABEL = { ok:'Normal', warn:'Warning', crit:'Critical' };
+const STATUS = { ok:'Healthy', warn:'Needs Attention', crit:'Critical' };
+const COL = { ok:'#1F9D6B', warn:'#F28C1E', crit:'#DC2626' };
+const fmtDate = days => { const t = new Date(); t.setDate(t.getDate() + days); return t.toLocaleDateString('en-US', { month:'short', day:'numeric' }); };
+const months = Array.from({ length:12 }, (_, i) => { const t = new Date(); t.setDate(1); t.setMonth(t.getMonth() - (11 - i)); return t; });
+
+/* ---------- LIVE SIMULATION + ALERTS ---------- */
+const H = 30, hist = {};
+membranes.forEach(m => { m.f = {}; m.b = { cl:m.cl, dp:dpNow(m) }; hist[m.n] = { cl:Array(H).fill(m.cl), dp:Array(H).fill(dpNow(m)) }; });
+const rnd = s => (Math.random() - .5) * 2 * s, clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+let swReg = null, aid = 10;
+
+function simulate() {   // TODO real sensor: set m.cl / m.dp[11] / m.inP from fetch(), WebSocket or MQTT here instead
+  membranes.forEach(m => {
+    m.cl = clamp(m.cl + rnd(.004) + (m.b.cl - m.cl) * .05, 0, .2);
+    m.dp[11] = clamp(m.dp[11] + rnd(.003) + (m.b.dp - m.dp[11]) * .05, .2, .7);
+    m.inP = clamp(m.inP + rnd(.03), 4.6, 5.4);
+    const h = hist[m.n]; h.cl.push(m.cl); h.cl.shift(); h.dp.push(dpNow(m)); h.dp.shift();
+    check(m);
+  });
+  sec = 0; render();
+}
+function spike(k, v) {
+  const m = get(cur); m.b[k] = v;
+  if (k === 'cl') m.cl = v; else m.dp[11] = v;
+  check(m); render();
+}
+function check(m) {
+  const L = levels(m);
+  [['cl', `Free chlorine ${m.cl.toFixed(2)} ppm is above the safe limit (${CL_LIM.toFixed(2)} ppm). Risk of membrane damage.`],
+   ['dp', `ΔP ${dpNow(m).toFixed(2)} bar is above the alert limit (${LIM} bar). Cleaning needed now.`]].forEach(([k, msg]) => {
+    if (L[k] !== 'crit') { m.f[k] = false; return; }
+    if (m.f[k]) return;
+    m.f[k] = true;
+    alerts.unshift({ id:++aid, n:m.n, lvl:'crit', time:new Date().toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' }), msg, ack:false });
+    notify(`Sabq – Membrane ${m.n} critical`, msg, `${m.n}-${k}`);
+  });
+}
+function notify(title, body, tag) {
+  const t = $('toast'); t.textContent = '⚠ ' + title + ' – ' + body; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 6000);
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  if (swReg && 'Notification' in window && Notification.permission === 'granted')
+    swReg.showNotification(title, { body, tag, icon:'icon-192.png', badge:'icon-192.png', vibrate:[200, 100, 200] });
+}
+
+/* ---------- RENDER ---------- */
+const $ = id => document.getElementById(id);
+
+function renderReadings(m) {
+  const L = levels(m), left = daysLeft(m), dp = dpNow(m);
+  $('readings').innerHTML = `
+    <div class="card-h">
+      <h2>Membrane ${m.n} – Critical Readings</h2>
+      <div class="r">
+        <span class="status ${worst(m)}">Status: ${STATUS[worst(m)]}</span>
+        <button class="btn warnb" id="simCl">⚠ Simulate chlorine spike</button><button class="btn warnb" id="simDp">⚠ Simulate ΔP rise</button><button class="btn primary" id="logCip">+ Log CIP event</button>
+      </div>
+    </div>
+    <div class="tiles">
+      <div class="tile big ${L.cip}">
+        <div class="tile-h"><span>Cleaning needed in</span><span class="pill">${LABEL[L.cip].toUpperCase()}</span></div>
+        <div class="val">~${left}<small>days</small></div>
+        <div class="note">Based on 12-month ΔP trend · Predicted ${fmtDate(left)}</div>
+      </div>
+      <div class="tile ${L.npf}">
+        <div class="tile-h"><span>Flow (NPF)</span><span class="pill">${LABEL[L.npf]}</span></div>
+        <div class="val">${m.npf}%</div>
+        <div class="note">Alert limit: ${NPF_LIM}%</div>
+      </div>
+      <div class="tile ${L.dp}">
+        <div class="tile-h"><span>Pressure drop (ΔP)</span><span class="pill">${LABEL[L.dp]}</span></div>
+        <div class="val">${dp.toFixed(2)}<small>bar</small></div>
+        <div class="note">In ${m.inP.toFixed(1)} bar → Out ${(m.inP - dp).toFixed(2)} bar<br>Drop = ${dp.toFixed(2)} bar · normal ≤ ${LIM} bar</div>
+      </div>
+      <div class="tile ${L.cl}">
+        <div class="tile-h"><span>Free chlorine</span><span class="pill">${LABEL[L.cl]}</span></div>
+        <div class="val">${m.cl.toFixed(2)}<small>ppm</small></div>
+        <div class="note">Safe limit &lt; ${CL_LIM.toFixed(2)} ppm at RO feed</div>
+      </div>
+    </div>`;
+  $('simCl').onclick = () => spike('cl', 0.14);
+  $('simDp').onclick = () => spike('dp', 0.56);
+  $('logCip').onclick = () => {
+    $('dlgText').textContent = `Log a cleaning (CIP) event for Membrane ${cur}? This resets its cycle to day 0.`;
+    $('dlg').returnValue = ''; $('dlg').showModal();
+  };
+}
+
+function renderChart(m) {
+  const X = i => 60 + i * 910 / 11, Y = v => 25 + (0.6 - v) / 0.6 * 130;
+  const f = months[0], l = months[11], fmt = t => t.toLocaleDateString('en-US', { month:'short', year:'numeric' });
+  $('chartT').textContent = `Pressure Drop (ΔP) – Last 12 Months (${fmt(f)} – ${fmt(l)})`;
+  const pts = m.dp.map((v, i) => `${X(i)},${Y(v)}`).join(' ');
+  let grid = '', segs = '', dots = '', ticks = '';
+  [0, 0.2, 0.4, 0.6].forEach(v => grid += `<line x1="60" x2="970" y1="${Y(v)}" y2="${Y(v)}" stroke="#EDF2F7"/><text x="50" y="${Y(v) + 4}" text-anchor="end" fill="#6B7A90" font-size="11">${v.toFixed(1)}</text>`);
+  m.dp.forEach((v, i) => {
+    const lv = dpLvl(v);
+    if (i && lv !== 'ok') segs += `<line x1="${X(i - 1)}" y1="${Y(m.dp[i - 1])}" x2="${X(i)}" y2="${Y(v)}" stroke="${COL[lv]}" stroke-width="3" stroke-linecap="round"/>`;
+    dots += `<circle cx="${X(i)}" cy="${Y(v)}" r="${i === 11 ? 5.5 : 4}" fill="${COL[lv]}" stroke="#fff" stroke-width="2"><title>${months[i].toLocaleDateString('en-US', { month:'long', year:'numeric' })}: ${v.toFixed(2)} bar</title></circle>`;
+    ticks += `<text x="${X(i)}" y="176" text-anchor="middle" fill="#6B7A90" font-size="11">${months[i].toLocaleDateString('en-US', { month:'short' })}</text>`;
+  });
+  $('chart').innerHTML = `
+  <svg viewBox="0 0 1000 195" role="img" aria-label="Monthly pressure drop for membrane ${m.n}">
+    <defs><linearGradient id="g" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#1F9D6B" stop-opacity=".22"/><stop offset="1" stop-color="#1F9D6B" stop-opacity=".03"/></linearGradient></defs>
+    ${grid}
+    <polygon points="60,${Y(0)} ${pts} 970,${Y(0)}" fill="url(#g)"/>
+    <line x1="60" x2="970" y1="${Y(LIM)}" y2="${Y(LIM)}" stroke="#DC2626" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <text x="970" y="${Y(LIM) - 6}" text-anchor="end" fill="#DC2626" font-size="11" font-weight="700">Alert limit 0.5 bar</text>
+    <polyline points="${pts}" fill="none" stroke="#1F9D6B" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+    ${segs}${dots}
+    <text x="${X(11)}" y="${Y(dpNow(m)) - 12}" text-anchor="end" fill="${COL[dpLvl(dpNow(m))]}" font-size="12" font-weight="700">${dpNow(m).toFixed(2)} bar</text>
+    ${ticks}
+  </svg>`;
+}
+
+function spark(a, lim, max, col) {
+  const X = i => 40 + i * 440 / (H - 1), Y = v => 10 + (1 - clamp(v / max, 0, 1)) * 100;
+  const pts = a.map((v, i) => `${X(i)},${Y(v)}`).join(' ');
+  return `<svg viewBox="0 0 500 125" role="img" aria-label="Live readings">
+    <line x1="40" x2="480" y1="${Y(lim)}" y2="${Y(lim)}" stroke="#DC2626" stroke-dasharray="5 4"/>
+    <text x="36" y="${Y(0) + 4}" text-anchor="end" fill="#6B7A90" font-size="11">0</text>
+    <text x="36" y="${Y(max) + 4}" text-anchor="end" fill="#6B7A90" font-size="11">${max}</text>
+    <polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round"/>
+    <circle cx="${X(H - 1)}" cy="${Y(a[H - 1])}" r="5" fill="${col}" stroke="#fff" stroke-width="2"/>
+  </svg>`;
+}
+function renderLive(m) {
+  const L = levels(m), h = hist[m.n];
+  $('chCl').innerHTML = spark(h.cl, CL_LIM, 0.2, COL[L.cl]);
+  $('chDp').innerHTML = spark(h.dp, LIM, 0.7, COL[L.dp]);
+}
+
+function renderTable() {
+  $('rows').innerHTML = membranes.map(m => `
+    <tr data-n="${m.n}" class="${worst(m)} ${m.n === cur ? 'cur' : ''}">
+      <td><span class="dot"></span>Membrane ${m.n}${m.n === cur ? '<em>(active)</em>' : ''}</td>
+      <td>${dpNow(m).toFixed(2)} bar</td>
+      <td>${m.cl.toFixed(2)} ppm</td>
+      <td>${daysLeft(m)} days</td>
+    </tr>`).join('');
+}
+
+function renderAlerts() {
+  $('alerts').innerHTML = alerts.length ? alerts.map(a => `
+    <div class="alert ${a.lvl} ${a.ack ? 'done' : ''}">
+      <div class="alert-t"><b>${LABEL[a.lvl]} · Membrane ${a.n}</b><span>${a.time}</span></div>
+      <p>${a.msg}</p>
+      ${a.ack ? '<span class="ack-done">✓ Acknowledged</span>' : `<button class="ack" data-id="${a.id}">Acknowledge</button>`}
+    </div>`).join('') : '<div class="empty">No active alerts.</div>';
+  const open = alerts.filter(a => !a.ack);
+  $('cnt').textContent = open.length;
+  $('bellN').textContent = open.length;
+  $('bellN').hidden = !open.length;
+  $('bellN').classList.toggle('red', open.some(a => a.lvl === 'crit'));
+}
+
+function render() {
+  const m = get(cur);
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', +t.dataset.n === cur));
+  renderReadings(m); renderLive(m); renderChart(m); renderTable(); renderAlerts();
+}
+
+/* ---------- EVENTS ---------- */
+const drawer = open => {
+  $('drawer').classList.toggle('open', open); $('scrim').hidden = !open;
+  $('bell').setAttribute('aria-expanded', open);
+};
+$('bell').onclick = () => drawer(!$('drawer').classList.contains('open'));
+$('close').onclick = $('scrim').onclick = () => drawer(false);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') drawer(false); });
+$('tabs').onclick = e => { const t = e.target.closest('.tab'); if (t) { cur = +t.dataset.n; render(); } };
+$('rows').onclick = e => { const r = e.target.closest('tr'); if (r) { cur = +r.dataset.n; render(); } };
+$('alerts').onclick = e => {
+  const b = e.target.closest('.ack'); if (!b) return;
+  alerts.find(a => a.id === +b.dataset.id).ack = true; renderAlerts();
+};
+$('clear').onclick = () => { alerts = alerts.filter(a => !a.ack); renderAlerts(); };
+$('dlg').onclose = () => {
+  if ($('dlg').returnValue !== 'ok') return;
+  const m = get(cur);
+  Object.assign(m, { d:0, npf:99, cl:0.01 }); m.dp[11] = 0.30; m.b = { cl:0.01, dp:0.30 };
+  alerts = alerts.filter(a => a.n !== cur); render();
+};
+
+/* ---------- CLOCK + "updated Ns ago" ---------- */
+let sec = 0;
+setInterval(() => { sec = (sec + 1) % 30; $('ago').textContent = sec; }, 1000);
+const tick = () => $('clock').textContent = new Date().toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+tick(); setInterval(tick, 15000);
+
+/* ---------- PWA + NOTIFICATIONS ---------- */
+const syncNotif = () => {
+  const p = 'Notification' in window ? Notification.permission : 'denied';
+  $('notif').textContent = p === 'granted' ? '🔔 Alerts on' : '🔔 Enable alerts'; $('notif').disabled = p === 'granted';
+};
+$('notif').onclick = async () => {
+  if (!('Notification' in window)) return alert('Notifications need the installed app. iPhone: Share → Add to Home Screen, then open Sabq from the home screen.');
+  await Notification.requestPermission(); syncNotif();
+};
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(() => {}); navigator.serviceWorker.ready.then(r => swReg = r); }
+syncNotif();
+setInterval(simulate, 2000);
+render();
+</script>
+</body>
+</html>
